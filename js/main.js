@@ -22,6 +22,9 @@ let letrasAdivinadasConsecutivas = 0;
 // Array para almacenar las letras que podrían estar incluidas en la siguiente letra a adivinar
 let letrasSugeridas = [];
 
+// Variable para almacenar el índice de la próxima letra a adivinar
+let indiceLetraAdivinar = 0;
+
 // Función para obtener las letras no adivinadas en orden aleatorio
 function obtenerLetrasNoAdivinadas() {
   let letrasNoAdivinadas = palabraSeleccionada.split('').filter(letra => !letrasAdivinadas.includes(letra));
@@ -53,10 +56,17 @@ function iniciarJuego() {
 // Función para mostrar la palabra adivinada con las letras adivinadas correctamente
 function mostrarPalabraAdivinada() {
   let letrasNoAdivinadas = obtenerLetrasNoAdivinadas();
+  let letrasMostradas = [];
 
   let palabraMostrada = palabraSeleccionada
     .split('')
-    .map(letra => (letrasAdivinadas.includes(letra) ? letra : '_'))
+    .map((letra, index) => {
+      if (letrasAdivinadas.includes(letra) && !letrasMostradas.includes(letra)) {
+        letrasMostradas.push(letra);
+        return letra;
+      }
+      return index < indiceLetraAdivinar ? letra : '_';
+    })
     .join(' ');
 
   alert(palabraMostrada);
@@ -70,6 +80,7 @@ function mostrarPalabraAdivinada() {
   alert("Puntuación actual: " + puntuacion);
 }
 
+
 // Función para adivinar una letra
 function adivinarLetra() {
   let letra = prompt(nombreJugador + ", escribí una letra:");
@@ -80,33 +91,37 @@ function adivinarLetra() {
 
   letra = letra.toLowerCase();
 
-  if (letrasAdivinadas.includes(letra)) {
-    alert("Ya has adivinado esa letra. Intenta con otra.");
-  } else if (palabraSeleccionada.includes(letra)) {
-    letrasAdivinadas.push(letra);
+  if (palabraSeleccionada[indiceLetraAdivinar] === letra) {
+    // La letra adivinada es la correcta y en el orden correspondiente
     letrasAdivinadasConsecutivas++;
+    letrasAdivinadas.push(letra);
     letrasAdivinadasConsecutivas >= 2 ? generarLetrasSugeridas() : letrasSugeridas = [];
     puntuacion += 10; // Incrementar la puntuación si la letra es correcta
-    alert("¡Adivinaste una letra!");
-    mostrarPalabraAdivinada();
+    indiceLetraAdivinar++;
+
+    if (indiceLetraAdivinar === palabraSeleccionada.length) {
+      // Todas las letras se adivinaron correctamente
+      alert("¡Felicitaciones, " + nombreJugador + "! ¡Adivinaste la palabra!");
+      reiniciarJuego();
+    } else {
+      alert("¡Adivinaste una letra!");
+      mostrarPalabraAdivinada();
+      adivinarLetra(); // Se sigue adivinando la siguiente letra
+    }
   } else {
-    // Restablecer el contador de letras adivinadas consecutivas y las letras sugeridas si la adivinanza es incorrecta
+    // La letra adivinada es incorrecta o no está en el orden correspondiente
     letrasAdivinadasConsecutivas = 0;
     letrasSugeridas = [];
     intentosRestantes--;
     puntuacion -= 5; // Reducir la puntuación si la letra es incorrecta
-    alert("La letra no está en la palabra. Intentos restantes: " + intentosRestantes);
+    alert("La letra no está en la palabra o no es la siguiente en el orden. Intentos restantes: " + intentosRestantes);
     if (intentosRestantes === 0) {
       alert("¡Perdiste, " + nombreJugador + "! La palabra era: " + palabraSeleccionada);
       reiniciarJuego();
+    } else {
+      mostrarPalabraAdivinada();
+      adivinarLetra(); // Se sigue adivinando la siguiente letra
     }
-  }
-
-  if (!palabraAdivinadaCompleta()) {
-    adivinarLetra();
-  } else {
-    alert("¡Felicitaciones, " + nombreJugador + "! ¡Adivinaste la palabra!");
-    reiniciarJuego();
   }
 }
 
@@ -138,6 +153,7 @@ function reiniciarJuego() {
     puntuacion = 0;
     letrasAdivinadasConsecutivas = 0;
     letrasSugeridas = [];
+    indiceLetraAdivinar = 0;
     iniciarJuego();
   } else {
     alert("Gracias por jugar, " + nombreJugador + ". ¡Nos vemos!");
@@ -146,12 +162,7 @@ function reiniciarJuego() {
 
 // Función para verificar si se ha adivinado la palabra completa
 function palabraAdivinadaCompleta() {
-  for (let i = 0; i < palabraSeleccionada.length; i++) {
-    if (!letrasAdivinadas.includes(palabraSeleccionada[i])) {
-      return false;
-    }
-  }
-  return true;
+  return indiceLetraAdivinar === palabraSeleccionada.length;
 }
 
 // Iniciar el juego al cargar la página
